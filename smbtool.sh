@@ -38,7 +38,6 @@ SMBOPTION="restart"
 #SMBOPTION="reload" 
 
 # Emplacement des partages samba
-ALL_SHARES_PATH="/home/Samba/Shares"
 ALL_SHARES_PATH="/mnt/samba"
 
 #snapshot path
