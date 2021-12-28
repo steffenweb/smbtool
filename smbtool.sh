@@ -39,6 +39,10 @@ SMBOPTION="restart"
 
 # Emplacement des partages samba
 ALL_SHARES_PATH="/home/Samba/Shares"
+ALL_SHARES_PATH="/mnt/samba"
+
+#snapshot path
+SHARESNAPSHOTS="${SHARE}.snapshots"
 
 # emplacement du fichier de log
 LOGPATH="/tmp/smbtool"
@@ -49,7 +53,7 @@ SHARE_OWNERS="root:root"
 # ID mini des utilisateurs et groups à gerer 
 MIN_ID_USER="1000"
 
-#Use in /etc/init.d/$SAMBA_NAME
+#Use in /sbin/$SAMBA_NAME
 SAMBA_NAME="samba"
 
 SCROLLTEXT="--scrolltext"
@@ -473,23 +477,34 @@ cat >>/etc/samba/smb.conf<<EOF
     inherit owner = yes
     admin users = @"root"
     valid users = $allgroup
+    vfs objects = shadow_copy2
+    shadow:format = %Y.%m.%d-%H.%M.%S-@$SHARE
+    shadow:sort = desc
+    shadow:snapdir=$ALL_SHARES_PATH/${SHARE}.snapshots
 ### smbtool : |$SHARE| ### end ###
 EOF
 
 
 	mkdir -p "$ALL_SHARES_PATH/$SHARE"
+	mkdir -p "$ALL_SHARES_PATH/${SHARE}.snapshots"
 	chown $SHARE_OWNERS "$ALL_SHARES_PATH/$SHARE"
+	chown $SHARE_OWNERS "$ALL_SHARES_PATH/${SHARE}.snapshots"
 	chmod 2775 "$ALL_SHARES_PATH/$SHARE"
+	chmod 2775 "$ALL_SHARES_PATH/${SHARE}.snapshots"
 
 	# ACL
 	setfacl -R -b "$ALL_SHARES_PATH/$SHARE"
+	setfacl -R -b "$ALL_SHARES_PATH/${SHARE}.snapshots"
 	setfacl -R -d -m o::--- "$ALL_SHARES_PATH/$SHARE"
+	setfacl -R -d -m o::--- "$ALL_SHARES_PATH/${SHARE}.snapshots"
 
 	# add acl for group
 	for name in $(echo $GROUP | sed 's/\"//g'); do # On vire les " qui font bugé userdel
 	
 		setfacl -R -m g:"$name":rwx "$ALL_SHARES_PATH/$SHARE"
+		setfacl -R -m g:"$name":rwx "$ALL_SHARES_PATH/${SHARE}.snapshots"
 		setfacl -R -d -m g:"$name":rwx "$ALL_SHARES_PATH/$SHARE"
+		setfacl -R -d -m g:"$name":rwx "$ALL_SHARES_PATH/${SHARE}.snapshots"
 			
 
 		if [ "$?" != "0" ];then
@@ -502,7 +517,7 @@ EOF
 		
 	done
 
-	/etc/init.d/$SAMBA_NAME $SMBOPTION
+	/sbin/$SAMBA_NAME $SMBOPTION
 
 	$DIALOG --title "Add Share for Group" --msgbox "Add Share *$SHARE* for group success :\nGroups :\n$(echo -e '\t-  '$allgroup | sed 's/,/\\n\t- /g')" 22 60
 
@@ -546,7 +561,7 @@ do_delshare()
 		
 	done
 
-	/etc/init.d/$SAMBA_NAME $SMBOPTION
+	/sbin/$SAMBA_NAME $SMBOPTION
 
 	$DIALOG --title "Delete Share" --msgbox "Delete Share success:$(echo -e '\t '$SHARES | sed 's/ /\n\t/g')" 22 60
 
@@ -583,13 +598,17 @@ do_modshare()
 
 	# ACL
 	setfacl -R -b "$ALL_SHARES_PATH/$SHARE"
+	setfacl -R -b "$ALL_SHARES_PATH/${SHARE}.snapshots"
 	setfacl -R -d -m o::--- "$ALL_SHARES_PATH/$SHARE"
+	setfacl -R -d -m o::--- "$ALL_SHARES_PATH/${SHARE}.snapshots"
 		
 	# add acl for group
 	for name in $(echo $GROUP | sed 's/\"//g'); do # On vire les " qui font bugé userdel
 	
 		setfacl -R -m g:"$name":rwx "$ALL_SHARES_PATH/$SHARE"
+		setfacl -R -m g:"$name":rwx "$ALL_SHARES_PATH/${SHARE}.snapshots"
 		setfacl -R -d -m g:"$name":rwx "$ALL_SHARES_PATH/$SHARE"
+		setfacl -R -d -m g:"$name":rwx "$ALL_SHARES_PATH/${SHARE}.snapshots"
 
 		if [ "$?" != "0" ];then
 			$DIALOG  --title "Modif Share" --msgbox "Modif Share $name for group $allgroup error" 22 60
@@ -601,7 +620,7 @@ do_modshare()
 		
 	done
 
-	/etc/init.d/$SAMBA_NAME $SMBOPTION
+	/sbin/$SAMBA_NAME $SMBOPTION
 
 	return 0
 }
@@ -644,7 +663,7 @@ do_enshare()
 		echo "$(date) ... Enable Share $name" >>$LOGPATH # LOG
 	done
 
-	/etc/init.d/$SAMBA_NAME $SMBOPTION
+	/sbin/$SAMBA_NAME $SMBOPTION
 
 	return 0
 }
@@ -686,7 +705,7 @@ do_disshare()
 		echo "$(date) ... Disable Share $name" >>$LOGPATH # LOG
 	done
 
-	/etc/init.d/$SAMBA_NAME $SMBOPTION
+	/sbin/$SAMBA_NAME $SMBOPTION
 
 	return 0
 }
