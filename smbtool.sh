@@ -480,6 +480,16 @@ cat >>/etc/samba/smb.conf<<EOF
     shadow:format = %Y.%m.%d-%H.%M.%S-@$SHARE
     shadow:sort = desc
     shadow:snapdir=$ALL_SHARES_PATH/${SHARE}.snapshots
+    vfs objects = recycle
+    recycle:repository = .recycle/%U
+    recycle:touch = Yes
+    recycle:keeptree = yes
+    recycle:versions = yes
+    recycle:touch_mtime = no
+    recycle:noversions =
+    recycle:exclude =
+    recycle:excludedir =
+    recycle:maxsize = 4294967296
 ### smbtool : |$SHARE| ### end ###
 EOF
 
